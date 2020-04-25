@@ -45,6 +45,38 @@ var (
 	ErrIllegal = errors.New("Illegal Error")
 )
 
+const (
+	/** Flag returned by GDALGetMaskFlags() to indicate that all pixels are valid */
+	GMF_ALL_VALID = 0x01
+	/** Flag returned by GDALGetMaskFlags() to indicate that the mask band is
+	 * valid for all bands */
+	GMF_PER_DATASET = 0x02
+	/** Flag returned by GDALGetMaskFlags() to indicate that the mask band is
+	 * an alpha band */
+	GMF_ALPHA = 0x04
+	/** Flag returned by GDALGetMaskFlags() to indicate that the mask band is
+	 * computed from nodata values */
+	GMF_NODATA = 0x08
+
+	/** Flag returned by GDALGetDataCoverageStatus() when the driver does not
+	 * implement GetDataCoverageStatus(). This flag should be returned together
+	 * with GDAL_DATA_COVERAGE_STATUS_DATA */
+	GDAL_DATA_COVERAGE_STATUS_UNIMPLEMENTED = 0x01
+
+	/** Flag returned by GDALGetDataCoverageStatus() when there is (potentially)
+	 * data in the queried window. Can be combined with the binary or operator
+	 * with GDAL_DATA_COVERAGE_STATUS_UNIMPLEMENTED or
+	 * GDAL_DATA_COVERAGE_STATUS_EMPTY */
+	GDAL_DATA_COVERAGE_STATUS_DATA = 0x02
+
+	/** Flag returned by GDALGetDataCoverageStatus() when there is nodata in the
+	 * queried window. This is typically identified by the concept of missing block
+	 * in formats that supports it.
+	 * Can be combined with the binary or operator with
+	 * GDAL_DATA_COVERAGE_STATUS_DATA */
+	GDAL_DATA_COVERAGE_STATUS_EMPTY = 0x04
+)
+
 // Error handling.  The following is bare-bones, and needs to be replaced with something more useful.
 func (err C.CPLErr) Err() error {
 	switch err {
@@ -1017,7 +1049,12 @@ func (dataset Dataset) GDALGetGCPCount() int {
 	return int(count)
 }
 
-// Unimplemented: GDALGetGCPProjection
+// Get projection of GCPs
+func (dataset Dataset) GDALGetGCPProjection() string {
+	proj := C.GoString(C.GDALGetGCPProjection(dataset.cval))
+	return proj
+}
+
 // Unimplemented: GDALGetGCPs
 // Unimplemented: GDALSetGCPs
 
