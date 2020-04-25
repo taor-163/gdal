@@ -858,6 +858,14 @@ const (
 	GRA_Cubic            = ResampleAlg(2)
 	GRA_CubicSpline      = ResampleAlg(3)
 	GRA_Lanczos          = ResampleAlg(4)
+	GRA_Average          = ResampleAlg(5)
+	GRA_Mode             = ResampleAlg(6)
+
+	GRA_Max = ResampleAlg(8)
+	GRA_Min = ResampleAlg(9)
+	GRA_Med = ResampleAlg(10)
+	GRA_Q1  = ResampleAlg(11)
+	GRA_Q3  = ResampleAlg(12)
 )
 
 func (dataset Dataset) AutoCreateWarpedVRT(srcWKT, dstWKT string, resampleAlg ResampleAlg) (Dataset, error) {
