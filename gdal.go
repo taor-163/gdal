@@ -1611,7 +1611,84 @@ func (sourceRaster RasterBand) RasterBandCopyWholeRaster(
 }
 
 // Generate downsampled overviews
-// Unimplemented: RegenerateOverviews
+func RegenerateOverviews(
+	sourceRaster RasterBand,
+	nOverviewCount int, destRaster []RasterBand,
+	resampling string,
+	progress ProgressFunc, data interface{},
+) error {
+	c_destRaster := make([]C.GDALRasterBandH, len(destRaster))
+	for i, raster := range destRaster {
+		c_destRaster[i] = raster.cval
+	}
+
+	c_resampling := C.CString(resampling)
+	defer C.free(unsafe.Pointer(c_resampling))
+
+	if progress == nil {
+		return C.GDALRegenerateOverviews(
+			sourceRaster.cval,
+			C.int(nOverviewCount), (*C.GDALRasterBandH)(unsafe.Pointer(&c_destRaster[0])),
+			c_resampling,
+			nil, nil,
+		).Err()
+	} else {
+		arg := &goGDALProgressFuncProxyArgs{progress, data}
+		return C.GDALRegenerateOverviews(
+			sourceRaster.cval,
+			C.int(nOverviewCount), (*C.GDALRasterBandH)(unsafe.Pointer(&c_destRaster[0])),
+			c_resampling,
+			C.goGDALProgressFuncProxyB(), unsafe.Pointer(arg),
+		).Err()
+	}
+}
+
+// Generate downsampled overviews, for a unique overview band
+func RegenerateOverview(
+	sourceRaster RasterBand,
+	destRaster RasterBand,
+	resampling string,
+	progress ProgressFunc, data interface{},
+) error {
+	return RegenerateOverviews(sourceRaster, 1, []RasterBand{destRaster}, resampling, progress, data)
+}
+
+// delete option arg, because GDALWarpOptions have not fil func,
+// like GDALWarpAppOptionsNew(char** papszArgv...
+// just GDALCreateWarpOptions()
+func ReprojectImage(SrcDS Dataset, SrcWKT string,
+	DstDS Dataset, DstWKT string,
+	resampleAlg ResampleAlg, dfWarpMemoryLimit float64,
+	dfMaxError float64,
+	progress ProgressFunc, data interface{},
+) error {
+
+	c_SrcWKT := C.CString(SrcWKT)
+	defer C.free(unsafe.Pointer(c_SrcWKT))
+
+	c_DstWKT := C.CString(DstWKT)
+	defer C.free(unsafe.Pointer(c_DstWKT))
+
+	if progress == nil {
+		return C.GDALReprojectImage(
+			SrcDS.cval, c_SrcWKT,
+			DstDS.cval, c_DstWKT,
+			C.GDALResampleAlg(resampleAlg), C.double(dfWarpMemoryLimit),
+			C.double(dfMaxError), nil, nil, nil,
+		).Err()
+	} else {
+		arg := &goGDALProgressFuncProxyArgs{progress, data}
+
+		return C.GDALReprojectImage(
+			SrcDS.cval, c_SrcWKT,
+			DstDS.cval, c_DstWKT,
+			C.GDALResampleAlg(resampleAlg), C.double(dfWarpMemoryLimit),
+			C.double(dfMaxError),
+			C.goGDALProgressFuncProxyB(), unsafe.Pointer(arg),
+			nil,
+		).Err()
+	}
+}
 
 /* ==================================================================== */
 /*     GDALAsyncReader                                                  */
